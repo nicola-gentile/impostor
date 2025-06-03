@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+dependencies = [
+    "fastapi[standard]", 
+    "uvicorn",
+    "SQLAlchemy", 
+    "pydantic", 
+    "sse_starlette",
+    "requests"]
+name = "impostor-app-services"
+version = "0.1.0"
+authors = [{ name = "Nicola Gentile", email = "nicola.gentile.developer@gmail.com"}]
+
