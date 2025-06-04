@@ -137,7 +137,7 @@ async def start(req: OwnerIdRequest):
 
         room_id = user.room_id
 
-        word = requests.get('https://random-word-api.herokuapp.com/word?number=1').json()[0]
+        word = requests.get('https://random-word-api.vercel.app/api?words=1').json()[0]
 
         #implement random impostor assignment
 
