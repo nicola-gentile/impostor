@@ -196,8 +196,9 @@ async def close(req: OwnerIdRequest):
         if not query.room_is_owner(owner.room_id, req.owner_id, session):
             raise HTTPException(status.HTTP_403_FORBIDDEN, 'only room owner can close the room')
         session.commit()
+        room_id = owner.room_id
 
-    clean_room(owner.room_id)
+    clean_room(room_id)
     
     return {"message": "Room closed"}
 
