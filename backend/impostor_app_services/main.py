@@ -193,7 +193,7 @@ async def close(req: OwnerIdRequest):
             raise HTTPException(status.HTTP_404_NOT_FOUND, f'user with id {req.owner_id} does not exist')
         
         owner = query.user_get(req.owner_id, session)
-        if not query.room_is_owner(user.room_id, req.owner_id, session):
+        if not query.room_is_owner(owner.room_id, req.owner_id, session):
             raise HTTPException(status.HTTP_403_FORBIDDEN, 'only room owner can close the room')
         session.commit()
 
