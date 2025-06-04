@@ -69,11 +69,13 @@ def set_alive(room_id: int, alive: bool = True):
 def is_alive(room_id: int):
     return room_id in keep_alive
 
-def get_owner_message_generator(owner_id: int, on_disconnect: Callable[[], None] = None):
+def get_owner_message_generator(owner_id: int, room_id: int, on_disconnect: Callable[[], None] = None):
     async def message_generator():
         import asyncio
         try:
             while 1:
+                if not is_alive(room_id):
+                    break
                 if owner_id in owner_messages and owner_messages[owner_id]:
                     yield owner_messages[owner_id].popleft()
                 await asyncio.sleep(1) 
@@ -87,7 +89,7 @@ def get_player_message_generator(user_id: int, room_id: int, on_disconnect: Call
         import asyncio
         try:
             while 1:
-                if room_id not in keep_alive:
+                if not is_alive(room_id):
                     if user_id in player_messages:
                         while player_messages[user_id]:
                             yield player_messages[user_id].popleft()

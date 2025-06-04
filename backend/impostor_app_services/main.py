@@ -56,9 +56,10 @@ async def owner_sse(owner_id: int):
             raise HTTPException(status.HTTP_404_NOT_FOUND, f'user with id {owner_id} does not exist')
         if not query.room_is_owner(query.user_get(owner_id, session).room_id, owner_id, session):
             raise HTTPException(status.HTTP_403_FORBIDDEN, 'user is not an owner of any room')
+        room_id = query.user_get(owner_id, session).room_id
     
     sse.register_owner(owner_id)
-    generator = sse.get_owner_message_generator(owner_id, lambda: clean_room(owner_id))
+    generator = sse.get_owner_message_generator(owner_id, room_id, lambda: clean_room(owner_id))
     return EventSourceResponse(generator(), media_type='text/event-stream')
 
 @router.get('/sse/player/{user_id}')
