@@ -198,7 +198,7 @@ async def close(req: OwnerIdRequest):
         session.commit()
         room_id = owner.room_id
 
-    clean_room(room_id)
+    sse.set_alive(room_id, False)
     
     return {"message": "Room closed"}
 
