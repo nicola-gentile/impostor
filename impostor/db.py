@@ -15,7 +15,6 @@ class Room(Base):
     __tablename__ = 'room'
 
     id = mapped_column(Integer, primary_key=True)
-    name = mapped_column(String, nullable=False)
     code = mapped_column(String(8), nullable=False, unique=True, index=True)
     owner_id = mapped_column(ForeignKey('user.id'), nullable=False)
     available = mapped_column(Boolean, nullable=False)

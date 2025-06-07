@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
 class RoomCreateRequest(BaseModel):
-    room_name: str
     owner_name: str
 
 class UserCreateRequest(BaseModel):

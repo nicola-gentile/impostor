@@ -22,7 +22,7 @@ async def room(req: RoomCreateRequest):
             room_code = generate_code()
             if not query.room_exists_by_code(room_code, session):
                 break
-        room = db.Room(name=req.room_name, owner_id=owner.id, code=room_code, available=True)
+        room = db.Room(owner_id=owner.id, code=room_code, available=True)
         session.add(room)
         session.commit()
         owner.room_id = room.id
