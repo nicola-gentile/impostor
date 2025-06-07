@@ -5,9 +5,9 @@ from fastapi import FastAPI, APIRouter, HTTPException, status
 from sse_starlette.sse import EventSourceResponse
 from sqlalchemy.orm import Session
 
-from impostor_app_services.request import *
-from impostor_app_services import db, query, sse
-from impostor_app_services.roomcode import generate_code
+from impostor.request import *
+from impostor import db, query, sse
+from impostor.roomcode import generate_code
 
 api_version = 'v1'
 router = APIRouter(prefix=f'/impostor/{api_version}')

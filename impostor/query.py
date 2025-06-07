@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 from sqlalchemy.orm import Session
 from sqlalchemy import select, delete, and_, func
 
-from impostor_app_services import db
+from impostor import db
 
 def room_get(room_id: int, ses: Session) -> Optional[db.Room]:
     query = select(db.Room).where(db.Room.id == room_id)
