@@ -109,8 +109,28 @@ async def user(req: UserCreateRequest):
         session.add(user)
         session.commit()
         user_id=user.id
+
+    def on_disconnect():
+        if sse.is_alive(room_id): #disconnected unexpectedly
+            with Session(db.engine) as session:
+                sse.unregister_player(user_id)
+                room = query.room_get(room_id, session)
+                user = query.user_get(user_id, session)
+                if not query.room_is_available(room_id, session): #disconnected during game
+                    sse.add_owner_message(room.owner_id, sse.get_stop_message(user.name))
+                    for player in query.room_get_players(room_id, session):
+                        sse.add_player_message(player.id, sse.get_stop_message(user.name))
+                    query.room_set_available(room_id, True, session)
+                else:
+                    sse.add_owner_message(room.owner_id, sse.get_left_message(user.name))
+                query.user_delete(user_id, session)
+                session.commit()
+            
+
+    sse.register_player(user_id)
+    generator = sse.get_player_message_generator(user_id, room_id, on_disconnect)
     sse.add_owner_message(query.room_get(room_id, session).owner_id, sse.get_joined_message(user.name))
-    return { 'user_id': user_id }
+    return EventSourceResponse(generator(), media_type='text/event-stream')
 
 @router.get('/user')
 async def user_all():
