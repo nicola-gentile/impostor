@@ -142,25 +142,6 @@ async def start(req: OwnerIdRequest):
     
     return {"message": "Game started"}
 
-@router.post('/end')
-async def end(req: OwnerIdRequest):
-    with Session(db.engine) as session:
-        if not query.user_exists(req.owner_id, session):
-            raise HTTPException(status.HTTP_404_NOT_FOUND, f'user with id {req.owner_id} does not exist')
-        
-        user = query.user_get(req.owner_id, session)
-        if not query.room_is_owner(user.room_id, req.owner_id, session):
-            raise HTTPException(status.HTTP_403_FORBIDDEN, 'only room owner can end the game')
-        
-        session.commit()
-
-        room_id = user.room_id
-
-    for p in query.room_get_players(room_id, session):
-        sse.add_player_message(p.id, sse.get_end_message())
-    
-    return {"message": "Game ended"}
-
 @router.post('/close')
 async def close(req: OwnerIdRequest):
     with Session(db.engine) as session:
