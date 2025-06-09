@@ -62,35 +62,6 @@ async def owner_sse(owner_id: int):
     generator = sse.get_owner_message_generator(owner_id, room_id, lambda: clean_room(room_id))
     return EventSourceResponse(generator(), media_type='text/event-stream')
 
-@router.get('/sse/player/{user_id}')
-async def room_sse(user_id: int):
-    with Session(db.engine) as session:
-        if not query.user_exists(user_id, session):
-            raise HTTPException(status.HTTP_404_NOT_FOUND, f'user with id {user_id} does not exist')
-        room_id = query.user_get(user_id, session).room_id
-        if not query.room_exists(room_id, session):
-            raise HTTPException(status.HTTP_404_NOT_FOUND, f'room {room_id} does not exist')
-    def on_disconnect():
-        if sse.is_alive(room_id): #disconnected unexpectedly
-            with Session(db.engine) as session:
-                sse.unregister_player(user_id)
-                room = query.room_get(room_id, session)
-                user = query.user_get(user_id, session)
-                if not query.room_is_available(room_id, session): #disconnected during game
-                    sse.add_owner_message(room.owner_id, sse.get_stop_message(user.name))
-                    for player in query.room_get_players(room_id, session):
-                        sse.add_player_message(player.id, sse.get_stop_message(user.name))
-                    query.room_set_available(room_id, True, session)
-                else:
-                    sse.add_owner_message(room.owner_id, sse.get_left_message(user.name))
-                query.user_delete(user_id, session)
-                session.commit()
-            
-
-    sse.register_player(user_id)
-    generator = sse.get_player_message_generator(user_id, room_id, on_disconnect)
-    return EventSourceResponse(generator(), media_type='text/event-stream')
-
 @router.post('/user')
 async def user(req: UserCreateRequest):
     with Session(db.engine) as session:
@@ -117,9 +88,9 @@ async def user(req: UserCreateRequest):
                 room = query.room_get(room_id, session)
                 user = query.user_get(user_id, session)
                 if not query.room_is_available(room_id, session): #disconnected during game
-                    sse.add_owner_message(room.owner_id, sse.get_stop_message(user.name))
+                    sse.add_owner_message(room.owner_id, sse.get_left_message(user.name))
                     for player in query.room_get_players(room_id, session):
-                        sse.add_player_message(player.id, sse.get_stop_message(user.name))
+                        sse.add_player_message(player.id, sse.get_left_message(user.name))
                     query.room_set_available(room_id, True, session)
                 else:
                     sse.add_owner_message(room.owner_id, sse.get_left_message(user.name))
