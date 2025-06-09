@@ -17,7 +17,6 @@ class Room(Base):
     id = mapped_column(Integer, primary_key=True)
     code = mapped_column(String(8), nullable=False, unique=True, index=True)
     owner_id = mapped_column(ForeignKey('user.id'), nullable=False)
-    available = mapped_column(Boolean, nullable=False)
 
 metadata = Base.metadata
 engine = create_engine('sqlite:///:memory:')

@@ -22,7 +22,7 @@ async def room(req: RoomCreateRequest):
             room_code = generate_code()
             if not query.room_exists_by_code(room_code, session):
                 break
-        room = db.Room(owner_id=owner.id, code=room_code, available=True)
+        room = db.Room(owner_id=owner.id, code=room_code)
         session.add(room)
         session.commit()
         owner.room_id = room.id
@@ -70,8 +70,6 @@ async def user(req: UserCreateRequest):
             raise HTTPException(status.HTTP_404_NOT_FOUND, f'room {req.room_code} does not exist')
         
         room_id = query.room_get_by_code(req.room_code, session).id
-        if not query.room_is_available(room_id, session):
-            raise HTTPException(status.HTTP_403_FORBIDDEN, 'joining the room is forbidden while playing')
         
         if query.user_any_alias_in_room(room_id, req.user_name, session):
             raise HTTPException(status.HTTP_409_CONFLICT, f'user named {req.user_name} already joined this room')
@@ -87,13 +85,7 @@ async def user(req: UserCreateRequest):
                 sse.unregister_player(user_id)
                 room = query.room_get(room_id, session)
                 user = query.user_get(user_id, session)
-                if not query.room_is_available(room_id, session): #disconnected during game
-                    sse.add_owner_message(room.owner_id, sse.get_left_message(user.name))
-                    for player in query.room_get_players(room_id, session):
-                        sse.add_player_message(player.id, sse.get_left_message(user.name))
-                    query.room_set_available(room_id, True, session)
-                else:
-                    sse.add_owner_message(room.owner_id, sse.get_left_message(user.name))
+                sse.add_owner_message(room.owner_id, sse.get_left_message(user.name))
                 query.user_delete(user_id, session)
                 session.commit()
             
@@ -118,13 +110,9 @@ async def start(req: OwnerIdRequest):
         if not query.room_is_owner(user.room_id, req.owner_id, session):
             raise HTTPException(status.HTTP_403_FORBIDDEN, 'only room owner can start the game')
         
-        if not query.room_is_available(user.room_id, session):
-            raise HTTPException(status.HTTP_403_FORBIDDEN, 'game already started')
-        
         if query.user_count_in_room(user.room_id, session) < 3:
             raise HTTPException(status.HTTP_403_FORBIDDEN, 'not enough players to start the game')
         
-        query.room_set_available(user.room_id, False, session)
         session.commit()
 
         room_id = user.room_id
@@ -164,10 +152,6 @@ async def end(req: OwnerIdRequest):
         if not query.room_is_owner(user.room_id, req.owner_id, session):
             raise HTTPException(status.HTTP_403_FORBIDDEN, 'only room owner can end the game')
         
-        if query.room_is_available(user.room_id, session):
-            raise HTTPException(status.HTTP_403_FORBIDDEN, 'game is not started yet')
-        
-        query.room_set_available(user.room_id, True, session)
         session.commit()
 
         room_id = user.room_id

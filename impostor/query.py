@@ -24,17 +24,6 @@ def room_get_by_owner(owner_id: int, ses: Session) -> Optional[db.Room]:
 def room_exists_by_code(room_code: str, ses: Session) -> bool:
     return room_get_by_code(room_code, ses) is not None
 
-def room_is_available(room_id: int, ses: Session) -> bool:
-    return room_get(room_id, ses).available
-
-def room_set_available(room_id: int, available: bool, ses: Session):
-    room = room_get(room_id, ses)
-    if room:
-        room.available = available
-        ses.commit()
-    else:
-        raise ValueError(f"Room with id {room_id} does not exist.")
-
 def room_is_owner(room_id: int, user_id: int, ses: Session) -> bool:
     query = select(db.Room).where(and_(db.Room.id == room_id, db.Room.owner_id == user_id))
     return ses.execute(query).first() is not None
