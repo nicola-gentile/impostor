@@ -78,6 +78,8 @@ def get_owner_message_generator(owner_id: int, room_id: int, request: Request, o
                 if owner_id in owner_messages and owner_messages[owner_id]:
                     yield owner_messages[owner_id].popleft()
                 await asyncio.sleep(1) 
+        except Exception as e:
+            print(e)
         finally:
             print('owner disconnecting')
             if on_disconnect:
