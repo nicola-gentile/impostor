@@ -39,7 +39,7 @@ async def room_all():
 
 def clean_room(room_id: int):
     if sse.is_alive(room_id):
-        sse.set_alive(room.id, False)
+        sse.set_alive(room_id, False)
         with Session(db.engine) as session:
             room = query.room_get(room_id, session)
             owner = query.user_get(room.owner_id, session)
