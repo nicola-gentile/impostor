@@ -1,7 +1,7 @@
 import requests
 import random
 
-from fastapi import FastAPI, APIRouter, HTTPException, status
+from fastapi import FastAPI, APIRouter, HTTPException, Request, status
 from sse_starlette.sse import EventSourceResponse
 from sqlalchemy.orm import Session
 
@@ -51,7 +51,7 @@ def clean_room(room_id: int):
             session.commit()
 
 @router.get('/sse/owner/{owner_id}')
-async def owner_sse(owner_id: int):
+async def owner_sse(owner_id: int, request: Request):
     with Session(db.engine) as session:
         if not query.user_exists(owner_id, session):
             raise HTTPException(status.HTTP_404_NOT_FOUND, f'user with id {owner_id} does not exist')
