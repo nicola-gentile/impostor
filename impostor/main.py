@@ -38,16 +38,17 @@ async def room_all():
         return {'rooms':query.room_all(session)}
 
 def clean_room(room_id: int):
-    with Session(db.engine) as session:
-        room = query.room_get(room_id, session)
-        owner = query.user_get(room.owner_id, session)
-        sse.unregister_owner(owner.id)
-        for p in query.room_get_players(room.id, session) :
-            sse.add_player_message(p.id, sse.get_close_message(owner.name))
+    if not sse.is_alive(room_id):
         sse.set_alive(room.id, False)
-        # sse.unregister_owner(owner_id)
-        query.room_delete(room.id, session)
-        session.commit()
+        with Session(db.engine) as session:
+            room = query.room_get(room_id, session)
+            owner = query.user_get(room.owner_id, session)
+            sse.unregister_owner(owner.id)
+            for p in query.room_get_players(room.id, session) :
+                sse.add_player_message(p.id, sse.get_close_message(owner.name))
+            # sse.unregister_owner(owner_id)
+            query.room_delete(room.id, session)
+            session.commit()
 
 @router.get('/sse/owner/{owner_id}')
 async def owner_sse(owner_id: int):
@@ -59,7 +60,7 @@ async def owner_sse(owner_id: int):
         room_id = query.user_get(owner_id, session).room_id
     
     sse.register_owner(owner_id)
-    generator = sse.get_owner_message_generator(owner_id, room_id, lambda: clean_room(room_id) if sse.is_alive(room_id) else None)
+    generator = sse.get_owner_message_generator(owner_id, room_id, lambda: clean_room(room_id))
     return EventSourceResponse(generator(), media_type='text/event-stream')
 
 @router.post('/user')
@@ -143,7 +144,6 @@ async def start(req: OwnerIdRequest):
 
 @router.post('/close')
 async def close(req: OwnerIdRequest):
-    sse.set_alive(room_id, False)
     with Session(db.engine) as session:
         if not query.user_exists(req.owner_id, session):
             raise HTTPException(status.HTTP_404_NOT_FOUND, f'user with id {req.owner_id} does not exist')
@@ -151,8 +151,8 @@ async def close(req: OwnerIdRequest):
         owner = query.user_get(req.owner_id, session)
         if not query.room_is_owner(owner.room_id, owner.id, session):
             raise HTTPException(status.HTTP_403_FORBIDDEN, 'only room owner can close the room')
+        sse.set_alive(owner.room_id, False)
         session.commit()
-        room_id = owner.room_id
 
     
     return {"message": "Room closed"}
