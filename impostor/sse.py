@@ -1,6 +1,7 @@
 from typing import Dict, Deque, Callable, Set
 from collections import deque
 from enum import Enum
+from fastapi import Request;
 import json
 
 owner_messages: Dict[int, Deque[str]] = {}
@@ -69,13 +70,11 @@ def set_alive(room_id: int, alive: bool = True):
 def is_alive(room_id: int):
     return room_id in keep_alive
 
-def get_owner_message_generator(owner_id: int, room_id: int, on_disconnect: Callable[[], None] = None):
+def get_owner_message_generator(owner_id: int, room_id: int, request: Request, on_disconnect: Callable[[], None] = None):
     async def message_generator():
         import asyncio
         try:
-            while 1:
-                if not is_alive(room_id):
-                    break
+            while is_alive(room_id) and not await request.is_disconnected():
                 if owner_id in owner_messages and owner_messages[owner_id]:
                     yield owner_messages[owner_id].popleft()
                 await asyncio.sleep(1) 
