@@ -59,7 +59,7 @@ async def owner_sse(owner_id: int):
         room_id = query.user_get(owner_id, session).room_id
     
     sse.register_owner(owner_id)
-    generator = sse.get_owner_message_generator(owner_id, room_id, lambda: clean_room(room_id))
+    generator = sse.get_owner_message_generator(owner_id, room_id, lambda: clean_room(room_id) if sse.is_alive(room_id) else None)
     return EventSourceResponse(generator(), media_type='text/event-stream')
 
 @router.post('/user')
@@ -89,7 +89,6 @@ async def user(req: UserCreateRequest):
                 query.user_delete(user_id, session)
                 session.commit()
             
-
     sse.register_player(user_id)
     generator = sse.get_player_message_generator(user_id, room_id, on_disconnect)
     sse.add_owner_message(query.room_get(room_id, session).owner_id, sse.get_joined_message(user.name))
@@ -144,17 +143,17 @@ async def start(req: OwnerIdRequest):
 
 @router.post('/close')
 async def close(req: OwnerIdRequest):
+    sse.set_alive(room_id, False)
     with Session(db.engine) as session:
         if not query.user_exists(req.owner_id, session):
             raise HTTPException(status.HTTP_404_NOT_FOUND, f'user with id {req.owner_id} does not exist')
         
         owner = query.user_get(req.owner_id, session)
-        if not query.room_is_owner(owner.room_id, req.owner_id, session):
+        if not query.room_is_owner(owner.room_id, owner.id, session):
             raise HTTPException(status.HTTP_403_FORBIDDEN, 'only room owner can close the room')
         session.commit()
         room_id = owner.room_id
 
-    sse.set_alive(room_id, False)
     
     return {"message": "Room closed"}
 
