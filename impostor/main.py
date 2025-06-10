@@ -60,7 +60,7 @@ async def owner_sse(owner_id: int, request: Request):
         room_id = query.user_get(owner_id, session).room_id
     
     sse.register_owner(owner_id)
-    generator = sse.get_owner_message_generator(owner_id, room_id, lambda: clean_room(room_id))
+    generator = sse.get_owner_message_generator(owner_id, room_id, request, lambda: clean_room(room_id))
     return EventSourceResponse(generator(), media_type='text/event-stream')
 
 @router.post('/user')
