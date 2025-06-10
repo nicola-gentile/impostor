@@ -38,7 +38,7 @@ async def room_all():
         return {'rooms':query.room_all(session)}
 
 def clean_room(room_id: int):
-    if not sse.is_alive(room_id):
+    if sse.is_alive(room_id):
         sse.set_alive(room.id, False)
         with Session(db.engine) as session:
             room = query.room_get(room_id, session)

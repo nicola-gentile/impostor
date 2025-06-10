@@ -80,7 +80,7 @@ def get_owner_message_generator(owner_id: int, room_id: int, on_disconnect: Call
                     yield owner_messages[owner_id].popleft()
                 await asyncio.sleep(1) 
         finally:
-            print('disconnecting')
+            print('owner disconnecting')
             if on_disconnect:
                 on_disconnect()
     return message_generator 
@@ -99,7 +99,7 @@ def get_player_message_generator(user_id: int, room_id: int, on_disconnect: Call
                     yield player_messages[user_id].popleft()
                 await asyncio.sleep(1) 
         finally:
-            print('disconnecting')
+            print('player disconnecting')
             if on_disconnect:
                 on_disconnect()
     return message_generator
