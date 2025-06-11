@@ -70,7 +70,7 @@ async def user(user_id: int):
         if not query.user_exists(user_id, session):
             raise HTTPException(status.HTTP_404_NOT_FOUND, f'user {user_id} does not exist')
         
-        user = query.user_get(user_id)
+        user = query.user_get(user_id, session)
         room_id = user.room_id
         user_id = user.id
 
