@@ -63,6 +63,32 @@ async def owner_sse(owner_id: int, request: Request):
     generator = sse.get_owner_message_generator(owner_id, room_id, request, lambda: clean_room(room_id))
     return EventSourceResponse(generator(), media_type='text/event-stream')
 
+@router.get('/sse/user/{user_id}')
+async def user(user_id: int):
+    with Session(db.engine) as session:
+
+        if not query.user_exists(user_id, session):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, f'user {user_id} does not exist')
+        
+        user = query.user_get(user_id)
+        room_id = user.room_id
+        user_id = user.id
+
+    def on_disconnect():
+        if sse.is_alive(room_id): #disconnected unexpectedly
+            with Session(db.engine) as session:
+                sse.unregister_player(user_id)
+                room = query.room_get(room_id, session)
+                user = query.user_get(user_id, session)
+                sse.add_owner_message(room.owner_id, sse.get_left_message(user.name))
+                query.user_delete(user_id, session)
+                session.commit()
+            
+    sse.register_player(user_id)
+    generator = sse.get_player_message_generator(user_id, room_id, on_disconnect)
+    sse.add_owner_message(query.room_get(room_id, session).owner_id, sse.get_joined_message(user.name))
+    return EventSourceResponse(generator(), media_type='text/event-stream')
+
 @router.post('/user')
 async def user(req: UserCreateRequest):
     with Session(db.engine) as session:
@@ -80,20 +106,7 @@ async def user(req: UserCreateRequest):
         session.commit()
         user_id=user.id
 
-    def on_disconnect():
-        if sse.is_alive(room_id): #disconnected unexpectedly
-            with Session(db.engine) as session:
-                sse.unregister_player(user_id)
-                room = query.room_get(room_id, session)
-                user = query.user_get(user_id, session)
-                sse.add_owner_message(room.owner_id, sse.get_left_message(user.name))
-                query.user_delete(user_id, session)
-                session.commit()
-            
-    sse.register_player(user_id)
-    generator = sse.get_player_message_generator(user_id, room_id, on_disconnect)
-    sse.add_owner_message(query.room_get(room_id, session).owner_id, sse.get_joined_message(user.name))
-    return EventSourceResponse(generator(), media_type='text/event-stream')
+    return { 'user_id': user_id }
 
 @router.get('/user')
 async def user_all():
