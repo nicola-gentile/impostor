@@ -40,7 +40,6 @@ async def room_all():
 def clean_room(room_id: int):
     if sse.is_alive(room_id):
         print(f'cleaning room {room_id}')
-        sse.set_alive(room_id, False)
         with Session(db.engine) as session:
             room = query.room_get(room_id, session)
             owner = query.user_get(room.owner_id, session)
@@ -50,6 +49,7 @@ def clean_room(room_id: int):
             # sse.unregister_owner(owner_id)
             query.room_delete(room.id, session)
             session.commit()
+        sse.set_alive(room_id, False)
 
 @router.get('/sse/owner/{owner_id}')
 async def owner_sse(owner_id: int, request: Request):
