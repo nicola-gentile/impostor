@@ -38,18 +38,17 @@ async def room_all():
         return {'rooms':query.room_all(session)}
 
 def clean_room(room_id: int):
-    if sse.is_alive(room_id):
-        print(f'cleaning room {room_id}')
-        with Session(db.engine) as session:
-            room = query.room_get(room_id, session)
-            owner = query.user_get(room.owner_id, session)
-            sse.unregister_owner(owner.id)
-            for p in query.room_get_players(room.id, session) :
-                sse.add_player_message(p.id, sse.get_close_message(owner.name))
-            # sse.unregister_owner(owner_id)
-            query.room_delete(room.id, session)
-            session.commit()
-        sse.set_alive(room_id, False)
+    print(f'cleaning room {room_id}')
+    with Session(db.engine) as session:
+        room = query.room_get(room_id, session)
+        owner = query.user_get(room.owner_id, session)
+        sse.unregister_owner(owner.id)
+        for p in query.room_get_players(room.id, session) :
+            sse.add_player_message(p.id, sse.get_close_message(owner.name))
+        # sse.unregister_owner(owner_id)
+        query.room_delete(room.id, session)
+        session.commit()
+    sse.set_alive(room_id, False)
 
 @router.get('/sse/owner/{owner_id}')
 async def owner_sse(owner_id: int, request: Request):
