@@ -167,9 +167,11 @@ async def end(req: OwnerIdRequest):
 
         session.commit()
         room_id = user.room_id
+        owner_id = user.id
 
-    for p in query.room_get_players(room_id, session):
-        sse.add_player_message(p.id, sse.get_end_message())
+        for p in query.room_get_players(room_id, session):
+            sse.add_player_message(p.id, sse.get_end_message())
+    
 
     return {"message": "Game ended"}
 
